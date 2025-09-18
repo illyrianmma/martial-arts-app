@@ -3,90 +3,34 @@
 <head>
   <meta charset="UTF-8">
   <title>Payments</title>
-  <script>
-    async function loadPayments() {
-      const res = await fetch('/api/payments');
-      const payments = await res.json();
-      const tbody = document.getElementById('paymentsBody');
-      tbody.innerHTML = '';
-      payments.forEach(p => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${p.student_name || ''}</td>
-          <td>${p.amount}</td>
-          <td>${p.taxable ? 'Yes' : 'No'}</td>
-          <td>${p.method || ''}</td>
-          <td>${p.date}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    async function addPayment(e) {
-      e.preventDefault();
-      const student_id = document.getElementById('student_id').value;
-      const amount = document.getElementById('amount').value;
-      const taxable = document.querySelector('input[name="taxable"]:checked').value === "1";
-      const method = document.querySelector('input[name="method"]:checked').value;
-      const date = document.getElementById('date').value;
-
-      const res = await fetch('/api/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_id, amount, taxable, method, date })
-      });
-
-      if (res.ok) {
-        document.getElementById('paymentForm').reset();
-        loadPayments();
-      } else {
-        alert('Error adding payment');
-      }
-    }
-
-    async function loadStudents() {
-      const res = await fetch('/api/students');
-      const students = await res.json();
-      const select = document.getElementById('student_id');
-      select.innerHTML = '';
-      students.forEach(s => {
-        const option = document.createElement('option');
-        option.value = s.id;
-        option.textContent = `${s.first_name} ${s.last_name}`;
-        select.appendChild(option);
-      });
-    }
-
-    window.onload = () => {
-      loadStudents();
-      loadPayments();
-      document.getElementById('paymentForm').addEventListener('submit', addPayment);
-    };
-  </script>
 </head>
 <body>
   <h1>Payments</h1>
 
   <h2>Add Payment</h2>
   <form id="paymentForm">
-    <label>Student:
-      <select id="student_id" required></select>
-    </label>
-    <label>Amount:
-      <input type="number" id="amount" step="0.01" required>
-    </label>
-    <label>Taxable:
-      <input type="radio" name="taxable" value="1" required> Yes
-      <input type="radio" name="taxable" value="0"> No
-    </label>
-    <label>Method:
-      <input type="radio" name="method" value="cash" required> Cash
-      <input type="radio" name="method" value="card"> Card
-      <input type="radio" name="method" value="other"> Other
-    </label>
-    <label>Date:
-      <input type="date" id="date" required>
-    </label>
+    <label for="student_id">Student:</label>
+    <select id="student_id" name="student_id" required></select>
+
+    <label for="amount">Amount:</label>
+    <input type="number" id="amount" name="amount" step="0.01" required>
+
+    <label>Taxable:</label>
+    <input type="radio" id="taxableYes" name="taxable" value="1" required>
+    <label for="taxableYes">Yes</label>
+    <input type="radio" id="taxableNo" name="taxable" value="0">
+    <label for="taxableNo">No</label>
+
+    <label for="method">Method:</label>
+    <select id="method" name="method" required>
+      <option value="cash">Cash</option>
+      <option value="card">Card</option>
+      <option value="other">Other</option>
+    </select>
+
+    <label for="date">Date:</label>
+    <input type="date" id="date" name="date" required>
+
     <button type="submit">Add Payment</button>
   </form>
 
@@ -101,9 +45,62 @@
         <th>Date</th>
       </tr>
     </thead>
-    <tbody id="paymentsBody"></tbody>
+    <tbody id="paymentList"></tbody>
   </table>
 
-  <p><a href="/index.html">Back to Main Page</a></p>
+  <p><a href="index.html">Back to Main Page</a></p>
+
+  <script>
+    async function loadStudents() {
+      const res = await fetch('/api/students');
+      const students = await res.json();
+      const select = document.getElementById('student_id');
+      students.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.first_name} ${s.last_name}`;
+        select.appendChild(opt);
+      });
+    }
+
+    async function loadPayments() {
+      const res = await fetch('/api/payments');
+      const payments = await res.json();
+      const list = document.getElementById('paymentList');
+      list.innerHTML = '';
+      payments.forEach(p => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.student_name || ''}</td>
+          <td>${p.amount}</td>
+          <td>${p.taxable ? 'Yes' : 'No'}</td>
+          <td>${p.method}</td>
+          <td>${p.date}</td>
+        `;
+        list.appendChild(tr);
+      });
+    }
+
+    document.getElementById('paymentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const data = Object.fromEntries(formData.entries());
+      data.taxable = parseInt(data.taxable);
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        e.target.reset();
+        await loadPayments();
+      } else {
+        alert('Failed to add payment');
+      }
+    });
+
+    loadStudents();
+    loadPayments();
+  </script>
 </body>
 </html>
