@@ -12,33 +12,38 @@
     <label>
       Student:
       <select id="student_id" required></select>
-    </label>
+    </label><br><br>
+
     <label>
       Amount:
       <input type="number" id="amount" step="0.01" required>
-    </label>
+    </label><br><br>
+
     <label>
       Taxable:
-      <input type="radio" name="taxable" value="1"> Yes
-      <input type="radio" name="taxable" value="0" checked> No
-    </label>
+      <input type="radio" name="taxable" value="1" required> Yes
+      <input type="radio" name="taxable" value="0"> No
+    </label><br><br>
+
     <label>
       Method:
-      <select id="method">
+      <select id="method" required>
         <option value="cash">Cash</option>
         <option value="card">Card</option>
         <option value="other">Other</option>
       </select>
-    </label>
+    </label><br><br>
+
     <label>
       Date:
-      <input type="date" id="date">
-    </label>
+      <input type="date" id="date" required>
+    </label><br><br>
+
     <button type="submit">Add Payment</button>
   </form>
 
   <h2>Payment Records</h2>
-  <table border="1">
+  <table border="1" id="paymentsTable">
     <thead>
       <tr>
         <th>Student</th>
@@ -48,35 +53,34 @@
         <th>Date</th>
       </tr>
     </thead>
-    <tbody id="paymentsTable"></tbody>
+    <tbody></tbody>
   </table>
 
-  <p><a href="/index.html">Back to Main Page</a></p>
+  <p><a href="index.html">Back to Main Page</a></p>
 
   <script>
     async function loadStudents() {
       const res = await fetch('/api/students');
       const students = await res.json();
       const select = document.getElementById('student_id');
-      select.innerHTML = '';
       students.forEach(s => {
-        const option = document.createElement('option');
-        option.value = s.id;
-        option.textContent = `${s.first_name} ${s.last_name}`;
-        select.appendChild(option);
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.first_name} ${s.last_name}`;
+        select.appendChild(opt);
       });
     }
 
     async function loadPayments() {
       const res = await fetch('/api/payments');
       const payments = await res.json();
-      const tbody = document.getElementById('paymentsTable');
+      const tbody = document.querySelector('#paymentsTable tbody');
       tbody.innerHTML = '';
       payments.forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${p.student_name || 'Unknown'}</td>
-          <td>${p.amount}</td>
+          <td>${p.student_name || p.student_id}</td>
+          <td>$${p.amount.toFixed(2)}</td>
           <td>${p.taxable ? 'Yes' : 'No'}</td>
           <td>${p.method}</td>
           <td>${p.date}</td>
@@ -87,24 +91,20 @@
 
     document.getElementById('paymentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const student_id = document.getElementById('student_id').value;
-      const amount = document.getElementById('amount').value;
-      const taxable = document.querySelector('input[name="taxable"]:checked').value;
-      const method = document.getElementById('method').value;
-      const date = document.getElementById('date').value;
-
-      const res = await fetch('/api/payments', {
+      const data = {
+        student_id: document.getElementById('student_id').value,
+        amount: parseFloat(document.getElementById('amount').value),
+        taxable: document.querySelector('input[name="taxable"]:checked').value,
+        method: document.getElementById('method').value,
+        date: document.getElementById('date').value
+      };
+      await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ student_id, amount, taxable, method, date })
+        body: JSON.stringify(data)
       });
-
-      if (res.ok) {
-        document.getElementById('paymentForm').reset();
-        await loadPayments();
-      } else {
-        alert('Error adding payment');
-      }
+      await loadPayments();
+      e.target.reset();
     });
 
     loadStudents();
