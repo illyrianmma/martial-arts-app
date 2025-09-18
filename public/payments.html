@@ -9,28 +9,31 @@
 
   <h2>Add Payment</h2>
   <form id="paymentForm">
-    <label for="student_id">Student:</label>
-    <select id="student_id" name="student_id" required></select>
-
-    <label for="amount">Amount:</label>
-    <input type="number" id="amount" name="amount" step="0.01" required>
-
-    <label>Taxable:</label>
-    <input type="radio" id="taxableYes" name="taxable" value="1" required>
-    <label for="taxableYes">Yes</label>
-    <input type="radio" id="taxableNo" name="taxable" value="0">
-    <label for="taxableNo">No</label>
-
-    <label for="method">Method:</label>
-    <select id="method" name="method" required>
-      <option value="cash">Cash</option>
-      <option value="card">Card</option>
-      <option value="other">Other</option>
-    </select>
-
-    <label for="date">Date:</label>
-    <input type="date" id="date" name="date" required>
-
+    <label>
+      Student:
+      <select id="student_id" required></select>
+    </label>
+    <label>
+      Amount:
+      <input type="number" id="amount" step="0.01" required>
+    </label>
+    <label>
+      Taxable:
+      <input type="radio" name="taxable" value="1"> Yes
+      <input type="radio" name="taxable" value="0" checked> No
+    </label>
+    <label>
+      Method:
+      <select id="method">
+        <option value="cash">Cash</option>
+        <option value="card">Card</option>
+        <option value="other">Other</option>
+      </select>
+    </label>
+    <label>
+      Date:
+      <input type="date" id="date">
+    </label>
     <button type="submit">Add Payment</button>
   </form>
 
@@ -45,57 +48,62 @@
         <th>Date</th>
       </tr>
     </thead>
-    <tbody id="paymentList"></tbody>
+    <tbody id="paymentsTable"></tbody>
   </table>
 
-  <p><a href="index.html">Back to Main Page</a></p>
+  <p><a href="/index.html">Back to Main Page</a></p>
 
   <script>
     async function loadStudents() {
       const res = await fetch('/api/students');
       const students = await res.json();
       const select = document.getElementById('student_id');
+      select.innerHTML = '';
       students.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.first_name} ${s.last_name}`;
-        select.appendChild(opt);
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.textContent = `${s.first_name} ${s.last_name}`;
+        select.appendChild(option);
       });
     }
 
     async function loadPayments() {
       const res = await fetch('/api/payments');
       const payments = await res.json();
-      const list = document.getElementById('paymentList');
-      list.innerHTML = '';
+      const tbody = document.getElementById('paymentsTable');
+      tbody.innerHTML = '';
       payments.forEach(p => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td>${p.student_name || ''}</td>
+          <td>${p.student_name || 'Unknown'}</td>
           <td>${p.amount}</td>
           <td>${p.taxable ? 'Yes' : 'No'}</td>
           <td>${p.method}</td>
           <td>${p.date}</td>
         `;
-        list.appendChild(tr);
+        tbody.appendChild(tr);
       });
     }
 
     document.getElementById('paymentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const formData = new FormData(e.target);
-      const data = Object.fromEntries(formData.entries());
-      data.taxable = parseInt(data.taxable);
+      const student_id = document.getElementById('student_id').value;
+      const amount = document.getElementById('amount').value;
+      const taxable = document.querySelector('input[name="taxable"]:checked').value;
+      const method = document.getElementById('method').value;
+      const date = document.getElementById('date').value;
+
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+        body: JSON.stringify({ student_id, amount, taxable, method, date })
       });
+
       if (res.ok) {
-        e.target.reset();
+        document.getElementById('paymentForm').reset();
         await loadPayments();
       } else {
-        alert('Failed to add payment');
+        alert('Error adding payment');
       }
     });
 
