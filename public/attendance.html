@@ -5,20 +5,44 @@
   <title>Attendance</title>
 </head>
 <body>
-  <p><a href="index.html">⬅ Back</a></p>
   <h1>Attendance</h1>
 
+  <h2>Mark Attendance</h2>
   <form id="attendanceForm">
-    <select id="student_id" required></select>
-    <select id="status" required>
-      <option value="Present">Present</option>
-      <option value="Absent">Absent</option>
-    </select>
+    <label>
+      Student:
+      <select id="student_id" required></select>
+    </label><br>
+
+    <label>
+      Status:
+      <select id="status" required>
+        <option value="present">Present</option>
+        <option value="absent">Absent</option>
+      </select>
+    </label><br>
+
+    <label>
+      Date:
+      <input type="date" id="date" required>
+    </label><br>
+
     <button type="submit">Mark Attendance</button>
   </form>
 
-  <h2>Records</h2>
-  <ul id="attendanceList"></ul>
+  <h2>Attendance Records</h2>
+  <table border="1">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Status</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody id="attendanceList"></tbody>
+  </table>
+
+  <p><a href="index.html">Back to Main Page</a></p>
 
   <script>
     async function loadStudents() {
@@ -27,10 +51,10 @@
       const select = document.getElementById('student_id');
       select.innerHTML = '';
       students.forEach(s => {
-        const opt = document.createElement('option');
-        opt.value = s.id;
-        opt.textContent = `${s.first_name} ${s.last_name}`;
-        select.appendChild(opt);
+        const option = document.createElement('option');
+        option.value = s.id;
+        option.textContent = s.first_name + ' ' + s.last_name;
+        select.appendChild(option);
       });
     }
 
@@ -40,25 +64,30 @@
       const list = document.getElementById('attendanceList');
       list.innerHTML = '';
       records.forEach(r => {
-        const li = document.createElement('li');
-        li.textContent = `Student ID ${r.student_id} - ${r.date} - ${r.status}`;
-        list.appendChild(li);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${r.student_name || r.student_id}</td>
+          <td>${r.status}</td>
+          <td>${r.date}</td>
+        `;
+        list.appendChild(tr);
       });
     }
 
-    document.getElementById('attendanceForm').addEventListener('submit', async e => {
+    document.getElementById('attendanceForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const record = {
+      const data = {
         student_id: document.getElementById('student_id').value,
         status: document.getElementById('status').value,
-        date: new Date().toISOString().split('T')[0]
+        date: document.getElementById('date').value
       };
       await fetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(record)
+        body: JSON.stringify(data)
       });
-      loadAttendance();
+      document.getElementById('attendanceForm').reset();
+      await loadAttendance();
     });
 
     loadStudents();
