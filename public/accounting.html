@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Accounting Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    .summary, .breakdown, .trends, .students { margin-bottom: 30px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f0f0f0; }
+    .nav { margin-bottom: 20px; }
+    .nav a { margin-right: 15px; }
+  </style>
+</head>
+<body>
+  <div class="nav">
+    <a href="index.html">🏠 Main</a>
+  </div>
+
+  <h1>Accounting Dashboard</h1>
+
+  <div class="summary">
+    <h2>Summary</h2>
+    <p><strong>Total Income:</strong> $<span id="income">0.00</span></p>
+    <p><strong>Total Expenses:</strong> $<span id="expenses">0.00</span></p>
+    <p><strong>Net Balance:</strong> $<span id="net">0.00</span></p>
+  </div>
+
+  <div class="breakdown">
+    <h2>Income Breakdown</h2>
+    <ul>
+      <li>Taxable: $<span id="income_taxable">0.00</span></li>
+      <li>Non-Taxable: $<span id="income_non_taxable">0.00</span></li>
+      <li>Cash: $<span id="income_cash">0.00</span></li>
+      <li>Non-Cash: $<span id="income_non_cash">0.00</span></li>
+    </ul>
+
+    <h2>Expense Breakdown</h2>
+    <ul>
+      <li>Taxable: $<span id="expense_taxable">0.00</span></li>
+      <li>Non-Taxable: $<span id="expense_non_taxable">0.00</span></li>
+      <li>Cash: $<span id="expense_cash">0.00</span></li>
+      <li>Non-Cash: $<span id="expense_non_cash">0.00</span></li>
+    </ul>
+  </div>
+
+  <div class="trends">
+    <h2>Trends</h2>
+    <h3>Income by Month</h3>
+    <table id="incomeTable">
+      <thead><tr><th>Month</th><th>Total</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>Expenses by Month</h3>
+    <table id="expenseTable">
+      <thead><tr><th>Month</th><th>Total</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="students">
+    <h2>Payments by Student</h2>
+    <table id="studentPaymentsTable">
+      <thead><tr><th>Student</th><th>Total Paid</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <script>
+    async function loadSummary() {
+      try {
+        const res = await fetch('/api/accounting/summary');
+        const data = await res.json();
+
+        document.getElementById('income').textContent = data.totals.income.toFixed(2);
+        document.getElementById('expenses').textContent = data.totals.expenses.toFixed(2);
+        document.getElementById('net').textContent = data.totals.net.toFixed(2);
+
+        document.getElementById('income_taxable').textContent = (data.income_breakdown.taxable || 0).toFixed(2);
+        document.getElementById('income_non_taxable').textContent = (data.income_breakdown.non_taxable || 0).toFixed(2);
+        document.getElementById('income_cash').textContent = (data.income_breakdown.cash || 0).toFixed(2);
+        document.getElementById('income_non_cash').textContent = (data.income_breakdown.non_cash || 0).toFixed(2);
+
+        document.getElementById('expense_taxable').textContent = (data.expense_breakdown.taxable || 0).toFixed(2);
+        document.getElementById('expense_non_taxable').textContent = (data.expense_breakdown.non_taxable || 0).toFixed(2);
+        document.getElementById('expense_cash').textContent = (data.expense_breakdown.cash || 0).toFixed(2);
+        document.getElementById('expense_non_cash').textContent = (data.expense_breakdown.non_cash || 0).toFixed(2);
+
+        const incomeBody = document.querySelector('#incomeTable tbody');
+        incomeBody.innerHTML = '';
+        data.trends.incomeByMonth.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${r.month}</td><td>$${r.total.toFixed(2)}</td>`;
+          incomeBody.appendChild(tr);
+        });
+
+        const expenseBody = document.querySelector('#expenseTable tbody');
+        expenseBody.innerHTML = '';
+        data.trends.expensesByMonth.forEach(r => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${r.month}</td><td>$${r.total.toFixed(2)}</td>`;
+          expenseBody.appendChild(tr);
+        });
+
+      } catch (err) {
+        console.error('Error loading accounting summary:', err);
+      }
+    }
+
+    async function loadPaymentsByStudent() {
+      try {
+        const res = await fetch('/api/accounting/payments-by-student');
+        const data = await res.json();
+
+        const tableBody = document.querySelector('#studentPaymentsTable tbody');
+        tableBody.innerHTML = '';
+
+        data.forEach(row => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${row.student}</td><td>$${row.total_paid.toFixed(2)}</td>`;
+          tableBody.appendChild(tr);
+        });
+      } catch (err) {
+        console.error('Error loading payments by student:', err);
+      }
+    }
+
+    // Load everything on page load
+    loadSummary();
+    loadPaymentsByStudent();
+  </script>
+</body>
+</html>

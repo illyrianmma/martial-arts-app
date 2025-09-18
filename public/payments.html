@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Payments</title>
+</head>
+<body>
+  <p><a href="index.html">⬅ Back</a></p>
+  <h1>Payments</h1>
+
+  <form id="paymentForm">
+    <select id="student_id" required></select>
+    <input type="number" id="amount" placeholder="Amount" step="0.01" required>
+    <select id="taxable">
+      <option value="1">Taxable</option>
+      <option value="0">Non-Taxable</option>
+    </select>
+    <input type="text" id="method" placeholder="Method (Cash, Card)" required>
+    <button type="submit">Add Payment</button>
+  </form>
+
+  <h2>Payment Records</h2>
+  <ul id="paymentList"></ul>
+
+  <script>
+    async function loadStudents() {
+      const res = await fetch('/api/students');
+      const students = await res.json();
+      const select = document.getElementById('student_id');
+      select.innerHTML = '';
+      students.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.first_name} ${s.last_name}`;
+        select.appendChild(opt);
+      });
+    }
+
+    async function loadPayments() {
+      const res = await fetch('/api/payments');
+      const payments = await res.json();
+      const list = document.getElementById('paymentList');
+      list.innerHTML = '';
+      payments.forEach(p => {
+        const li = document.createElement('li');
+        li.textContent = `Student ID ${p.student_id} - $${p.amount} - ${p.method} - ${p.date}`;
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('paymentForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const payment = {
+        student_id: document.getElementById('student_id').value,
+        amount: document.getElementById('amount').value,
+        taxable: document.getElementById('taxable').value,
+        method: document.getElementById('method').value,
+        date: new Date().toISOString().split('T')[0]
+      };
+      await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payment)
+      });
+      e.target.reset();
+      loadPayments();
+    });
+
+    loadStudents();
+    loadPayments();
+  </script>
+</body>
+</html>

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Attendance</title>
+</head>
+<body>
+  <p><a href="index.html">⬅ Back</a></p>
+  <h1>Attendance</h1>
+
+  <form id="attendanceForm">
+    <select id="student_id" required></select>
+    <select id="status" required>
+      <option value="Present">Present</option>
+      <option value="Absent">Absent</option>
+    </select>
+    <button type="submit">Mark Attendance</button>
+  </form>
+
+  <h2>Records</h2>
+  <ul id="attendanceList"></ul>
+
+  <script>
+    async function loadStudents() {
+      const res = await fetch('/api/students');
+      const students = await res.json();
+      const select = document.getElementById('student_id');
+      select.innerHTML = '';
+      students.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.first_name} ${s.last_name}`;
+        select.appendChild(opt);
+      });
+    }
+
+    async function loadAttendance() {
+      const res = await fetch('/api/attendance');
+      const records = await res.json();
+      const list = document.getElementById('attendanceList');
+      list.innerHTML = '';
+      records.forEach(r => {
+        const li = document.createElement('li');
+        li.textContent = `Student ID ${r.student_id} - ${r.date} - ${r.status}`;
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('attendanceForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const record = {
+        student_id: document.getElementById('student_id').value,
+        status: document.getElementById('status').value,
+        date: new Date().toISOString().split('T')[0]
+      };
+      await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(record)
+      });
+      loadAttendance();
+    });
+
+    loadStudents();
+    loadAttendance();
+  </script>
+</body>
+</html>

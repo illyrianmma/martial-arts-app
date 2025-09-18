@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Leads</title>
+</head>
+<body>
+  <p><a href="index.html">⬅ Back</a></p>
+  <h1>Leads</h1>
+
+  <form id="leadForm">
+    <input type="text" id="name" placeholder="Name" required>
+    <input type="text" id="phone" placeholder="Phone">
+    <input type="email" id="email" placeholder="Email">
+    <input type="text" id="notes" placeholder="Notes">
+    <input type="date" id="callback_date">
+    <button type="submit">Add Lead</button>
+  </form>
+
+  <h2>Lead List</h2>
+  <ul id="leadList"></ul>
+
+  <script>
+    async function loadLeads() {
+      const res = await fetch('/api/leads');
+      const leads = await res.json();
+      const list = document.getElementById('leadList');
+      list.innerHTML = '';
+      leads.forEach(l => {
+        const li = document.createElement('li');
+        li.textContent = `${l.name} - ${l.phone || ''} - ${l.email || ''} - Callback: ${l.callback_date || 'N/A'}`;
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById('leadForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const lead = {
+        name: document.getElementById('name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value,
+        notes: document.getElementById('notes').value,
+        callback_date: document.getElementById('callback_date').value
+      };
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(lead)
+      });
+      e.target.reset();
+      loadLeads();
+    });
+
+    loadLeads();
+  </script>
+</body>
+</html>
