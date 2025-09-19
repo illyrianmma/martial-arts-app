@@ -1,36 +1,37 @@
 // routes/leads.js
 const express = require('express');
+const router = express.Router();
 
 module.exports = (db) => {
-  const router = express.Router();
+  // Create leads table if not exists
+  db.run(`
+    CREATE TABLE IF NOT EXISTS leads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      phone TEXT,
+      email TEXT,
+      callback_date TEXT
+    )
+  `);
 
-  // Get all leads
-  router.get('/', (req, res) => {
-    db.all('SELECT * FROM leads', [], (err, rows) => {
+  // Add lead
+  router.post('/', (req, res) => {
+    const { name, phone, email, callback_date } = req.body;
+    const sql = `
+      INSERT INTO leads (name, phone, email, callback_date)
+      VALUES (?, ?, ?, ?)
+    `;
+    db.run(sql, [name, phone, email, callback_date], function (err) {
       if (err) return res.status(500).json({ error: err.message });
-      res.json(rows);
+      res.json({ id: this.lastID });
     });
   });
 
-  // Add a new lead
-  router.post('/', (req, res) => {
-    const { name, phone, email, notes, callback_date } = req.body;
-    db.run(
-      `INSERT INTO leads (name, phone, email, notes, callback_date) VALUES (?, ?, ?, ?, ?)`,
-      [name, phone, email, notes, callback_date],
-      function (err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-      }
-    );
-  });
-
-  // Delete a lead
-  router.delete('/:id', (req, res) => {
-    const { id } = req.params;
-    db.run(`DELETE FROM leads WHERE id = ?`, [id], function (err) {
+  // Get all leads
+  router.get('/', (req, res) => {
+    db.all(`SELECT * FROM leads ORDER BY callback_date ASC`, [], (err, rows) => {
       if (err) return res.status(500).json({ error: err.message });
-      res.json({ deletedID: id });
+      res.json(rows);
     });
   });
 
