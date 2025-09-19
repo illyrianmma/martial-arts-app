@@ -9,37 +9,30 @@
 
   <h2>Mark Attendance</h2>
   <form id="attendanceForm">
-    <label>
-      Student:
-      <select id="student_id" required></select>
-    </label><br>
-
-    <label>
-      Status:
-      <select id="status" required>
-        <option value="present">Present</option>
-        <option value="absent">Absent</option>
+    <label>Student:
+      <select id="student_id"></select>
+    </label>
+    <input type="date" id="date" required>
+    <label>Status:
+      <select id="status">
+        <option value="Present">Present</option>
+        <option value="Absent">Absent</option>
       </select>
-    </label><br>
-
-    <label>
-      Date:
-      <input type="date" id="date" required>
-    </label><br>
-
+    </label>
     <button type="submit">Mark Attendance</button>
   </form>
 
   <h2>Attendance Records</h2>
-  <table border="1">
+  <table border="1" id="attendanceTable">
     <thead>
       <tr>
         <th>Student</th>
-        <th>Status</th>
         <th>Date</th>
+        <th>Status</th>
+        <th>Actions</th>
       </tr>
     </thead>
-    <tbody id="attendanceList"></tbody>
+    <tbody></tbody>
   </table>
 
   <p><a href="index.html">Back to Main Page</a></p>
@@ -51,26 +44,30 @@
       const select = document.getElementById('student_id');
       select.innerHTML = '';
       students.forEach(s => {
-        const option = document.createElement('option');
-        option.value = s.id;
-        option.textContent = s.first_name + ' ' + s.last_name;
-        select.appendChild(option);
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.first_name} ${s.last_name}`;
+        select.appendChild(opt);
       });
     }
 
     async function loadAttendance() {
       const res = await fetch('/api/attendance');
       const records = await res.json();
-      const list = document.getElementById('attendanceList');
-      list.innerHTML = '';
+      const tbody = document.querySelector('#attendanceTable tbody');
+      tbody.innerHTML = '';
       records.forEach(r => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.student_name || r.student_id}</td>
-          <td>${r.status}</td>
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${r.student_name || 'Unknown'}</td>
           <td>${r.date}</td>
+          <td>${r.status}</td>
+          <td>
+            <button onclick="editAttendance(${r.id})">Edit</button>
+            <button onclick="deleteAttendance(${r.id})">Delete</button>
+          </td>
         `;
-        list.appendChild(tr);
+        tbody.appendChild(row);
       });
     }
 
@@ -78,17 +75,41 @@
       e.preventDefault();
       const data = {
         student_id: document.getElementById('student_id').value,
-        status: document.getElementById('status').value,
-        date: document.getElementById('date').value
+        date: document.getElementById('date').value,
+        status: document.getElementById('status').value
       };
       await fetch('/api/attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      document.getElementById('attendanceForm').reset();
-      await loadAttendance();
+      loadAttendance();
+      e.target.reset();
     });
+
+    async function editAttendance(id) {
+      const newStudent = prompt("Enter new student ID:");
+      const newDate = prompt("Enter new date (YYYY-MM-DD):");
+      const newStatus = prompt("Enter status (Present/Absent):");
+
+      await fetch('/api/attendance/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student_id: newStudent,
+          date: newDate,
+          status: newStatus
+        })
+      });
+      loadAttendance();
+    }
+
+    async function deleteAttendance(id) {
+      if (confirm("Are you sure you want to delete this record?")) {
+        await fetch('/api/attendance/' + id, { method: 'DELETE' });
+        loadAttendance();
+      }
+    }
 
     loadStudents();
     loadAttendance();

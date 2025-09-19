@@ -9,62 +9,30 @@
 
   <h2>Add Student</h2>
   <form id="studentForm">
-    <label>
-      First Name:
-      <input type="text" id="first_name" required>
-    </label><br>
-
-    <label>
-      Last Name:
-      <input type="text" id="last_name" required>
-    </label><br>
-
-    <label>
-      Email:
-      <input type="email" id="email">
-    </label><br>
-
-    <label>
-      Phone:
-      <input type="text" id="phone">
-    </label><br>
-
-    <label>
-      Address:
-      <input type="text" id="address">
-    </label><br>
-
-    <label>
-      Program:
-      <input type="text" id="program">
-    </label><br>
-
-    <label>
-      Start Date:
-      <input type="date" id="start_date">
-    </label><br>
-
-    <label>
-      Renewal Date:
-      <input type="date" id="renewal_date">
-    </label><br>
-
+    <input type="text" id="first_name" placeholder="First Name" required>
+    <input type="text" id="last_name" placeholder="Last Name" required>
+    <input type="email" id="email" placeholder="Email">
+    <input type="text" id="phone" placeholder="Phone">
+    <input type="text" id="address" placeholder="Address">
+    <input type="text" id="program" placeholder="Program">
+    <input type="date" id="start_date">
+    <input type="date" id="renewal_date">
     <button type="submit">Add Student</button>
   </form>
 
   <h2>Student List</h2>
-  <table border="1">
+  <table border="1" id="studentsTable">
     <thead>
       <tr>
         <th>Name</th>
-        <th>Email</th>
         <th>Phone</th>
         <th>Program</th>
         <th>Start Date</th>
         <th>Renewal Date</th>
+        <th>Actions</th>
       </tr>
     </thead>
-    <tbody id="studentList"></tbody>
+    <tbody></tbody>
   </table>
 
   <p><a href="index.html">Back to Main Page</a></p>
@@ -73,19 +41,22 @@
     async function loadStudents() {
       const res = await fetch('/api/students');
       const students = await res.json();
-      const list = document.getElementById('studentList');
-      list.innerHTML = '';
+      const tbody = document.querySelector('#studentsTable tbody');
+      tbody.innerHTML = '';
       students.forEach(s => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
+        const row = document.createElement('tr');
+        row.innerHTML = `
           <td>${s.first_name} ${s.last_name}</td>
-          <td>${s.email || ''}</td>
           <td>${s.phone || ''}</td>
           <td>${s.program || ''}</td>
           <td>${s.start_date || ''}</td>
           <td>${s.renewal_date || ''}</td>
+          <td>
+            <button onclick="editStudent(${s.id})">Edit</button>
+            <button onclick="deleteStudent(${s.id})">Delete</button>
+          </td>
         `;
-        list.appendChild(tr);
+        tbody.appendChild(row);
       });
     }
 
@@ -99,16 +70,50 @@
         address: document.getElementById('address').value,
         program: document.getElementById('program').value,
         start_date: document.getElementById('start_date').value,
-        renewal_date: document.getElementById('renewal_date').value
+        renewal_date: document.getElementById('renewal_date').value,
       };
       await fetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-      document.getElementById('studentForm').reset();
-      await loadStudents();
+      loadStudents();
+      e.target.reset();
     });
+
+    async function editStudent(id) {
+      const newFirst = prompt("Enter new first name:");
+      const newLast = prompt("Enter new last name:");
+      const newEmail = prompt("Enter new email:");
+      const newPhone = prompt("Enter new phone:");
+      const newAddress = prompt("Enter new address:");
+      const newProgram = prompt("Enter new program:");
+      const newStart = prompt("Enter new start date (YYYY-MM-DD):");
+      const newRenewal = prompt("Enter new renewal date (YYYY-MM-DD):");
+
+      await fetch('/api/students/' + id, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: newFirst,
+          last_name: newLast,
+          email: newEmail,
+          phone: newPhone,
+          address: newAddress,
+          program: newProgram,
+          start_date: newStart,
+          renewal_date: newRenewal
+        })
+      });
+      loadStudents();
+    }
+
+    async function deleteStudent(id) {
+      if (confirm("Are you sure you want to delete this student?")) {
+        await fetch('/api/students/' + id, { method: 'DELETE' });
+        loadStudents();
+      }
+    }
 
     loadStudents();
   </script>

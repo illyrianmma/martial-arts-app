@@ -2,72 +2,81 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Accounting</title>
+  <title>Accounting Dashboard</title>
 </head>
 <body>
   <h1>Accounting Dashboard</h1>
 
   <h2>Summary</h2>
-  <div id="summary">
-    <p><strong>Total Income:</strong> $0.00</p>
-    <p><strong>Total Expenses:</strong> $0.00</p>
-    <p><strong>Net Balance:</strong> $0.00</p>
-  </div>
+  <p><strong>Total Income:</strong> $<span id="totalIncome">0.00</span></p>
+  <p><strong>Total Expenses:</strong> $<span id="totalExpenses">0.00</span></p>
+  <p><strong>Net Balance:</strong> $<span id="netBalance">0.00</span></p>
 
-  <h2>Income Breakdown</h2>
-  <ul id="incomeBreakdown"></ul>
+  <h2>Income Records</h2>
+  <table border="1" id="incomeTable">
+    <thead>
+      <tr>
+        <th>Student</th>
+        <th>Amount</th>
+        <th>Taxable</th>
+        <th>Method</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  <h2>Expense Breakdown</h2>
-  <ul id="expenseBreakdown"></ul>
+  <h2>Expense Records</h2>
+  <table border="1" id="expensesTable">
+    <thead>
+      <tr>
+        <th>Description</th>
+        <th>Amount</th>
+        <th>Taxable</th>
+        <th>Method</th>
+        <th>Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-  <h2>Trends</h2>
-  <h3>Income by Month</h3>
-  <ul id="incomeTrends"></ul>
-
-  <h3>Expenses by Month</h3>
-  <ul id="expenseTrends"></ul>
-
-  <p><a href="index.html">Back to Main Page</a></p>
+  <p><a href="/index.html">Back to Main Page</a></p>
 
   <script>
     async function loadAccounting() {
-      const res = await fetch('/api/accounting/summary');
+      const res = await fetch('/api/accounting');
       const data = await res.json();
 
-      document.getElementById('summary').innerHTML = `
-        <p><strong>Total Income:</strong> $${data.totals.income.toFixed(2)}</p>
-        <p><strong>Total Expenses:</strong> $${data.totals.expenses.toFixed(2)}</p>
-        <p><strong>Net Balance:</strong> $${data.totals.net.toFixed(2)}</p>
-      `;
+      document.getElementById('totalIncome').textContent = data.totalIncome.toFixed(2);
+      document.getElementById('totalExpenses').textContent = data.totalExpenses.toFixed(2);
+      document.getElementById('netBalance').textContent = data.netBalance.toFixed(2);
 
-      document.getElementById('incomeBreakdown').innerHTML = `
-        <li>Taxable: $${(data.income_breakdown.taxable || 0).toFixed(2)}</li>
-        <li>Non-Taxable: $${(data.income_breakdown.non_taxable || 0).toFixed(2)}</li>
-        <li>Cash: $${(data.income_breakdown.cash || 0).toFixed(2)}</li>
-        <li>Non-Cash: $${(data.income_breakdown.non_cash || 0).toFixed(2)}</li>
-      `;
-
-      document.getElementById('expenseBreakdown').innerHTML = `
-        <li>Taxable: $${(data.expense_breakdown.taxable || 0).toFixed(2)}</li>
-        <li>Non-Taxable: $${(data.expense_breakdown.non_taxable || 0).toFixed(2)}</li>
-        <li>Cash: $${(data.expense_breakdown.cash || 0).toFixed(2)}</li>
-        <li>Non-Cash: $${(data.expense_breakdown.non_cash || 0).toFixed(2)}</li>
-      `;
-
-      const incomeList = document.getElementById('incomeTrends');
-      incomeList.innerHTML = '';
-      data.trends.incomeByMonth.forEach(i => {
-        const li = document.createElement('li');
-        li.textContent = `${i.month}: $${i.total.toFixed(2)}`;
-        incomeList.appendChild(li);
+      const incomeBody = document.querySelector('#incomeTable tbody');
+      incomeBody.innerHTML = '';
+      data.income.forEach(i => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${i.student_name || ''}</td>
+          <td>${i.amount}</td>
+          <td>${i.taxable ? 'Yes' : 'No'}</td>
+          <td>${i.method}</td>
+          <td>${i.date}</td>
+        `;
+        incomeBody.appendChild(row);
       });
 
-      const expenseList = document.getElementById('expenseTrends');
-      expenseList.innerHTML = '';
-      data.trends.expensesByMonth.forEach(e => {
-        const li = document.createElement('li');
-        li.textContent = `${e.month}: $${e.total.toFixed(2)}`;
-        expenseList.appendChild(li);
+      const expenseBody = document.querySelector('#expensesTable tbody');
+      expenseBody.innerHTML = '';
+      data.expenses.forEach(ex => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${ex.description}</td>
+          <td>${ex.amount}</td>
+          <td>${ex.taxable ? 'Yes' : 'No'}</td>
+          <td>${ex.method}</td>
+          <td>${ex.date}</td>
+        `;
+        expenseBody.appendChild(row);
       });
     }
 

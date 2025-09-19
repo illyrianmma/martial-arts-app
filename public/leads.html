@@ -5,50 +5,60 @@
   <title>Leads</title>
 </head>
 <body>
-  <p><a href="index.html">⬅ Back</a></p>
   <h1>Leads</h1>
 
+  <h2>Add Lead</h2>
   <form id="leadForm">
-    <input type="text" id="name" placeholder="Name" required>
-    <input type="text" id="phone" placeholder="Phone">
-    <input type="email" id="email" placeholder="Email">
-    <input type="text" id="notes" placeholder="Notes">
-    <input type="date" id="callback_date">
+    <label>Name: <input type="text" name="name" required></label><br><br>
+    <label>Phone: <input type="text" name="phone"></label><br><br>
+    <label>Email: <input type="email" name="email"></label><br><br>
+    <label>Callback Date: <input type="date" name="callback_date"></label><br><br>
     <button type="submit">Add Lead</button>
   </form>
 
   <h2>Lead List</h2>
-  <ul id="leadList"></ul>
+  <table border="1" id="leadsTable">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Phone</th>
+        <th>Email</th>
+        <th>Callback Date</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <p><a href="/index.html">Back to Main Page</a></p>
 
   <script>
     async function loadLeads() {
       const res = await fetch('/api/leads');
       const leads = await res.json();
-      const list = document.getElementById('leadList');
-      list.innerHTML = '';
+      const tbody = document.querySelector('#leadsTable tbody');
+      tbody.innerHTML = '';
       leads.forEach(l => {
-        const li = document.createElement('li');
-        li.textContent = `${l.name} - ${l.phone || ''} - ${l.email || ''} - Callback: ${l.callback_date || 'N/A'}`;
-        list.appendChild(li);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${l.name}</td>
+          <td>${l.phone || ''}</td>
+          <td>${l.email || ''}</td>
+          <td>${l.callback_date || ''}</td>
+        `;
+        tbody.appendChild(row);
       });
     }
 
-    document.getElementById('leadForm').addEventListener('submit', async e => {
+    document.getElementById('leadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const lead = {
-        name: document.getElementById('name').value,
-        phone: document.getElementById('phone').value,
-        email: document.getElementById('email').value,
-        notes: document.getElementById('notes').value,
-        callback_date: document.getElementById('callback_date').value
-      };
+      const data = Object.fromEntries(new FormData(e.target).entries());
       await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(lead)
+        body: JSON.stringify(data)
       });
-      e.target.reset();
       loadLeads();
+      e.target.reset();
     });
 
     loadLeads();
