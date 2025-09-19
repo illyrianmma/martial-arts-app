@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Payments</title>
 </head>
 <body>
@@ -10,24 +10,24 @@
   <h2>Add Payment</h2>
   <form id="paymentForm">
     <label for="student_id">Student:</label>
-    <select id="student_id" name="student_id" required></select>
+    <select id="student_id" required></select>
 
     <label for="amount">Amount:</label>
-    <input type="number" id="amount" name="amount" step="0.01" required>
+    <input type="number" id="amount" step="0.01" required />
 
     <label>Taxable:</label>
-    <input type="radio" name="taxable" value="1"> Yes
-    <input type="radio" name="taxable" value="0" checked> No
+    <label><input type="radio" name="taxable" value="1" required /> Yes</label>
+    <label><input type="radio" name="taxable" value="0" /> No</label>
 
     <label for="method">Method:</label>
-    <select id="method" name="method">
+    <select id="method" required>
       <option value="Cash">Cash</option>
       <option value="Card">Card</option>
       <option value="Other">Other</option>
     </select>
 
     <label for="date">Date:</label>
-    <input type="date" id="date" name="date">
+    <input type="date" id="date" required />
 
     <button type="submit">Add Payment</button>
   </form>
@@ -43,13 +43,12 @@
         <th>Date</th>
       </tr>
     </thead>
-    <tbody id="paymentList"></tbody>
+    <tbody id="paymentsList"></tbody>
   </table>
 
   <p><a href="index.html">Back to Main Page</a></p>
 
   <script>
-    // Load students for dropdown
     async function loadStudents() {
       const res = await fetch('/api/students');
       const students = await res.json();
@@ -63,48 +62,42 @@
       });
     }
 
-    // Load payments for table
     async function loadPayments() {
       const res = await fetch('/api/payments');
       const payments = await res.json();
-      const list = document.getElementById('paymentList');
-      list.innerHTML = '';
+      const tbody = document.getElementById('paymentsList');
+      tbody.innerHTML = '';
       payments.forEach(p => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${p.student || 'Unknown'}</td>
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${p.student_name || ''}</td>
           <td>${p.amount}</td>
           <td>${p.taxable ? 'Yes' : 'No'}</td>
           <td>${p.method}</td>
           <td>${p.date}</td>
         `;
-        list.appendChild(row);
+        tbody.appendChild(tr);
       });
     }
 
-    // Handle form submission
     document.getElementById('paymentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const form = e.target;
       const data = {
-        student_id: form.student_id.value,
-        amount: form.amount.value,
-        taxable: form.taxable.value,
-        method: form.method.value,
-        date: form.date.value
+        student_id: document.getElementById('student_id').value,
+        amount: document.getElementById('amount').value,
+        taxable: document.querySelector('input[name="taxable"]:checked').value,
+        method: document.getElementById('method').value,
+        date: document.getElementById('date').value
       };
-
       await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
       });
-
-      form.reset();
+      document.getElementById('paymentForm').reset();
       await loadPayments();
     });
 
-    // Initial load
     loadStudents();
     loadPayments();
   </script>
